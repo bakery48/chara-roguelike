@@ -25,6 +25,9 @@ class Game {
   state = $state<GameState>(defaultState())
   offlineReport = $state<OfflineReport | null>(null)
 
+  /** 時間の倍速。テストプレイ用パネルから変更する。通常は 1。 */
+  speed = $state(1)
+
   #timer: ReturnType<typeof setInterval> | null = null
   #lastTick = 0
   #sinceSave = 0
@@ -86,14 +89,15 @@ class Game {
     const delta = Math.max(0, now - this.#lastTick)
     this.#lastTick = now
     if (delta === 0) return
+    const scaled = delta * this.speed
 
-    if (delta > CONFIG.time.tickMs * 50) {
-      // 大きな飛び(スリープ復帰など)は plain object でまとめて処理する。
+    if (scaled > CONFIG.time.tickMs * 50) {
+      // 大きな飛び(スリープ復帰・倍速)は plain object でまとめて処理する。
       const plain = clone(this.state)
-      stepGame(plain, delta)
+      stepGame(plain, scaled)
       this.state = plain
     } else {
-      stepGame(this.state, delta)
+      stepGame(this.state, scaled)
     }
 
     this.#sinceSave += delta
@@ -117,6 +121,14 @@ class Game {
     Object.assign(this.state.settings, patch)
     // 自動連続遠征をONにした直後に待機中なら、そのまま出発させる。
     if (patch.autoRepeat && this.state.status === 'idle') this.depart()
+    this.#flush()
+  }
+
+  /** 指定時間ぶんの進行を即座に消化する(テストプレイ用)。 */
+  skip(ms: number): void {
+    const plain = clone(this.state)
+    stepGame(plain, ms)
+    this.state = plain
     this.#flush()
   }
 

@@ -213,4 +213,21 @@ describe('stepGame / オフライン進行', () => {
     stepGame(state, 8 * 3600_000)
     expect(state.chronicles.length).toBeLessThanOrEqual(CONFIG.chronicle.maxEntries)
   })
+
+  it('上限を超えても殿堂入りの遠征記は捨てられない', () => {
+    const state = freshState()
+    beginExpedition(state)
+    // 上限に達するまで回してから、殿堂入りが失われていないか見る
+    stepGame(state, 3600_000)
+    const fameBefore = state.chronicles.filter((c) => c.hallOfFame)
+    expect(fameBefore.length).toBeGreaterThan(0)
+
+    stepGame(state, 8 * 3600_000)
+    expect(state.chronicles.length).toBe(CONFIG.chronicle.maxEntries)
+
+    const fameAfter = state.chronicles.filter((c) => c.hallOfFame)
+    for (const c of fameBefore) {
+      expect(fameAfter.some((f) => f.id === c.id)).toBe(true)
+    }
+  })
 })

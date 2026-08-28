@@ -49,8 +49,7 @@ function finishExpedition(state: GameState, report?: OfflineReport): void {
   }
 
   state.chronicles.push(chronicle)
-  const over = state.chronicles.length - CONFIG.chronicle.maxEntries
-  if (over > 0) state.chronicles.splice(0, over)
+  trimChronicles(state)
 
   state.nextIndex++
   state.lastLog = exp.log
@@ -120,6 +119,29 @@ export function catchUpOffline(state: GameState, now: number): OfflineReport {
   }
   if (elapsed > 0) stepGame(state, elapsed, report)
   return report
+}
+
+/**
+ * 遠征記を上限件数まで切り詰める。
+ * 殿堂入り(初討伐・最深記録・奇妙な死・初踏破)は固定表示するものなので、
+ * 古い通常の記録から先に捨てて、名場面は残す。
+ */
+function trimChronicles(state: GameState): void {
+  const max = CONFIG.chronicle.maxEntries
+  let over = state.chronicles.length - max
+  if (over <= 0) return
+
+  state.chronicles = state.chronicles.filter((c) => {
+    if (over > 0 && !c.hallOfFame) {
+      over--
+      return false
+    }
+    return true
+  })
+
+  // 殿堂入りだけで上限を超えた場合は、さすがに古いものから落とす。
+  const stillOver = state.chronicles.length - max
+  if (stillOver > 0) state.chronicles.splice(0, stillOver)
 }
 
 export function canAfford(state: GameState, id: UpgradeId): boolean {

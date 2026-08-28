@@ -12,16 +12,18 @@
 npm install
 npm run dev            # 開発サーバー (http://localhost:5173)
 npm run build          # 型チェック + 本番ビルド (dist/)
-npm run build:single   # CSS/JS をインライン化した1ファイル (dist/standalone.html)
+npm run build:single   # CSS/JS をインライン化した1ファイル (out/standalone.html)
 npm run preview        # ビルド結果の確認
 npm test               # ロジックのテスト (vitest)
-npm run test:html      # 同じテストをブラウザで走らせる1ファイル (dist/tests.html)
+npm run build:playtest # 検証コンソール付きのテストプレイ用ビルド (out/playtest.html)
+npm run test:html      # 同じテストをブラウザで走らせる1ファイル (out/tests.html)
 npm run balance        # バランス確認シミュレーション (下記)
 ```
 
 バックエンドを持たない静的サイトで、`vite.config.ts` の `base` は `'./'` にしてある。
 `dist/` をそのまま itch.io に zip でアップロードしたり、任意のサブパスに置いて配信できる。
-`dist/standalone.html` は1ファイルで完結するので、ブラウザで直接開いても遊べる。
+`out/standalone.html` は1ファイルで完結するので、ブラウザで直接開いても遊べる
+（`vite build` が `dist/` を毎回空にするため、1ファイル出力の置き場は `out/` に分けてある）。
 
 ## MVPスコープの実装状況
 
@@ -55,10 +57,26 @@ MVPに含めないもの（分岐イベント、装備システム、複数ダ�
 - 浅く安全に周回する方が有利な序盤 → 深く潜る方が有利な終盤、という勾配
 - 強欲設定は序盤では自殺行為（死亡率100%）、終盤で初めて最効率になる
 
+## テストプレイ
+
+放置ゲームなので、素で触ると1遠征2分・強化が効いてくるまで数時間かかる。
+`npm run build:playtest` で出る `out/playtest.html` には画面下に検証コンソールが付き、
+
+- **倍速** ×1 / ×5 / ×20 / ×100 / ×500
+- **時間を飛ばす** +10分 / +1時間 / +8時間（オフライン進行と同じ経路で即座に消化）
+- **遺産ポイント付与** +100 / +1,000 / +10,000
+- **今の遠征を** 帰還させる / 死なせる / 運を引き直す（両方の結末と遠征記をすぐ確認できる）
+- **内部状態** フェーズ・次イベントまでの残り・seed・死亡率・遠征記の件数
+
+が使える。数時間ぶんの成長曲線を数分で見るためのもの。
+
+コンソールは `__PLAYTEST__` というビルド時フラグ（`vite.config.ts` の `define`）で
+囲ってあり、通常のビルドにはパネルもその依存も一切含まれない。
+
 ## テスト
 
 `npm test` で vitest。`npm run test:html` を使うと **同じテストコード** を
-ブラウザで実行する1ファイル `dist/tests.html` が出る（開くだけで走る）。
+ブラウザで実行する1ファイル `out/tests.html` が出る（開くだけで走る）。
 テストファイルの `from 'vitest'` を esbuild の alias で
 `src/lib/__tests__/browser/harness.ts`(最小の vitest 互換シム)に差し替えているだけで、
 テスト側にブラウザ用の分岐は入れていない。
@@ -99,6 +117,7 @@ src/
   types.ts               ドメイン型
   App.svelte             3カラムのレイアウト（左:ステータス 中:ログ/記録庫 右:拠点）
   components/            StatusPanel / LogPanel / ChroniclePanel / BasePanel
+                         PlaytestPanel（テストプレイ用ビルドのみ）
   lib/
     expedition.ts        遠征シミュレーション（純粋）
     game.ts              遠征の連鎖・精算・恒久強化・オフライン消化（純粋）
@@ -108,12 +127,13 @@ src/
     content.ts           敵・お宝・罠の名前
     save.ts              localStorage セーブとマイグレーション
     rng.ts               決定論的乱数（mulberry32）
+    playtest.ts          検証コンソールの操作（テストプレイ用ビルドのみ）
     __tests__/           vitest のテスト
       browser/           ブラウザでテストを走らせる harness と runner
 scripts/
   balance.ts             バランス確認シミュレーション
-  build-single.mjs       1ファイルのゲーム (dist/standalone.html)
-  build-tests.mjs        1ファイルのテストページ (dist/tests.html)
+  build-single.mjs       1ファイルのゲーム (out/standalone.html / out/playtest.html)
+  build-tests.mjs        1ファイルのテストページ (out/tests.html)
 ```
 
 UIは絵を使わず、数字・バー・テキスト・記号のみ。羊皮紙と活字の質感はCSSで作っている。

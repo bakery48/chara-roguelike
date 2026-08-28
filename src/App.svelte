@@ -3,6 +3,7 @@
   import BasePanel from './components/BasePanel.svelte'
   import ChroniclePanel from './components/ChroniclePanel.svelte'
   import LogPanel from './components/LogPanel.svelte'
+  import PlaytestPanel from './components/PlaytestPanel.svelte'
   import StatusPanel from './components/StatusPanel.svelte'
   import { CONFIG } from './config'
   import { duration, num } from './lib/format'
@@ -47,6 +48,10 @@
 
     <BasePanel />
   </div>
+
+  {#if __PLAYTEST__}
+    <PlaytestPanel />
+  {/if}
 </div>
 
 {#if report}

@@ -1,7 +1,7 @@
 /**
  * scripts/build-tests.mjs — テストをブラウザで走らせる1ファイルHTMLを作る。
  *
- *   npm run test:html   →  dist/tests.html
+ *   npm run test:html   →  out/tests.html
  *
  * テストファイルの `from 'vitest'` を esbuild の alias でブラウザ用の
  * harness に差し替えてバンドルし、CSS/JS をインライン化する。
@@ -58,6 +58,6 @@ const html = `<!doctype html>
 </html>
 `
 
-mkdirSync('dist', { recursive: true })
-writeFileSync('dist/tests.html', html)
-console.log(`dist/tests.html — ${(Buffer.byteLength(html) / 1024).toFixed(1)} KB`)
+mkdirSync('out', { recursive: true })
+writeFileSync('out/tests.html', html)
+console.log(`out/tests.html — ${(Buffer.byteLength(html) / 1024).toFixed(1)} KB`)
