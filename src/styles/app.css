@@ -1,0 +1,402 @@
+/*
+ * 「冒険者ギルドの記録簿」風。羊皮紙・活字・インクをCSSで表現する。
+ * 絵は使わず、罫線・活字・余白・にじみだけで質感を作る。
+ */
+:root {
+  --parchment: #efe3c8;
+  --parchment-deep: #e4d5b4;
+  --parchment-edge: #d8c69f;
+  --ink: #2f2519;
+  --ink-soft: #6b5a44;
+  --ink-faint: #9c8a70;
+  --rule: #c3ae86;
+  --vermilion: #a3372a;
+  --vermilion-soft: #c2604f;
+  --gold: #8a6a2c;
+  --moss: #4c6b45;
+  --shadow: rgba(60, 44, 24, 0.18);
+
+  --serif: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho',
+    'Noto Serif JP', serif;
+  --sans: 'Hiragino Sans', 'Yu Gothic', 'Noto Sans JP', system-ui, sans-serif;
+  --mono: 'SFMono-Regular', 'Menlo', 'Consolas', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #2a221a;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-feature-settings: 'palt' 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 245, 220, 0.08), transparent 60%),
+    radial-gradient(ellipse at 50% 100%, rgba(0, 0, 0, 0.25), transparent 55%);
+}
+
+#app { height: 100%; }
+
+/* ── レイアウト ─────────────────────────────── */
+.book {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  max-width: 1440px;
+  margin: 0 auto;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 245, 0.5), rgba(255, 253, 245, 0) 220px),
+    var(--parchment);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.5);
+}
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.9rem 1.6rem 0.7rem;
+  border-bottom: 3px double var(--rule);
+  flex-wrap: wrap;
+}
+.masthead h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: 0.32em;
+  font-weight: 600;
+}
+.masthead .sub {
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.18em;
+}
+.masthead .spacer { flex: 1; }
+
+.ledger {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr) 320px;
+}
+.ledger > * {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.1rem 1.2rem 2rem;
+}
+.ledger > * + * { border-left: 1px solid var(--rule); }
+
+@media (max-width: 1080px) {
+  .ledger { grid-template-columns: 1fr; }
+  .ledger > * + * { border-left: none; border-top: 1px solid var(--rule); }
+  .ledger > * { overflow-y: visible; }
+  .book { height: auto; min-height: 100%; }
+}
+
+/* ── 見出し ─────────────────────────────────── */
+.section-title {
+  font-size: 0.74rem;
+  letter-spacing: 0.3em;
+  color: var(--ink-soft);
+  margin: 0 0 0.7rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--rule);
+  font-weight: 600;
+}
+.section-title + .section-title { margin-top: 1.6rem; }
+h3.sub-title {
+  font-size: 0.78rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-soft);
+  margin: 1.4rem 0 0.5rem;
+}
+
+/* ── 数値表示 ───────────────────────────────── */
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.3rem 0;
+  border-bottom: 1px dotted var(--rule);
+  font-size: 0.85rem;
+}
+.stat-row .label { color: var(--ink-soft); letter-spacing: 0.08em; }
+.stat-row .value { font-family: var(--mono); font-size: 0.95rem; }
+.value.gold { color: var(--gold); }
+.value.legacy { color: var(--vermilion); }
+
+.big-number {
+  font-family: var(--mono);
+  font-size: 2rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+/* ── バー ───────────────────────────────────── */
+.bar {
+  height: 12px;
+  background: var(--parchment-edge);
+  border: 1px solid var(--rule);
+  position: relative;
+  overflow: hidden;
+}
+.bar > i {
+  display: block;
+  height: 100%;
+  background: var(--moss);
+  transition: width 0.2s linear;
+}
+.bar.hp > i { background: linear-gradient(90deg, #7d9c6d, #4c6b45); }
+.bar.hp.warn > i { background: linear-gradient(90deg, #cf9a3f, #a8761f); }
+.bar.hp.danger > i { background: linear-gradient(90deg, #c2604f, #a3372a); }
+.bar.thin { height: 7px; }
+.bar .line {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--vermilion);
+}
+
+/* ── 階層メーター ───────────────────────────── */
+.floors {
+  display: flex;
+  gap: 3px;
+  margin: 0.5rem 0 0.2rem;
+}
+.floors i {
+  flex: 1;
+  height: 26px;
+  border: 1px solid var(--rule);
+  background: var(--parchment-edge);
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-style: normal;
+  color: var(--ink-faint);
+}
+.floors i.done { background: var(--ink-soft); color: var(--parchment); border-color: var(--ink-soft); }
+.floors i.here { background: var(--vermilion); color: #fff5e6; border-color: var(--vermilion); }
+.floors i.target { box-shadow: inset 0 -3px 0 var(--gold); }
+
+/* ── ログ ───────────────────────────────────── */
+.log { list-style: none; margin: 0; padding: 0; }
+.log li {
+  display: grid;
+  grid-template-columns: 3.2rem 2.2rem 1fr;
+  gap: 0.6rem;
+  padding: 0.32rem 0.2rem;
+  border-bottom: 1px dotted var(--rule);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  animation: ink-in 0.35s ease-out;
+}
+@keyframes ink-in {
+  from { opacity: 0; transform: translateY(-3px); filter: blur(1px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+.log .t { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); padding-top: 0.2em; }
+.log .fl { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-soft); padding-top: 0.2em; }
+.log li.victory .body::before { content: '⚔ '; color: var(--moss); }
+.log li.defeat .body { color: var(--vermilion); font-weight: 600; }
+.log li.defeat .body::before { content: '† '; }
+.log li.disengage .body::before { content: '↩ '; color: var(--ink-faint); }
+.log li.loot .body::before { content: '◈ '; color: var(--gold); }
+.log li.triggered .body::before { content: '✦ '; color: var(--vermilion-soft); }
+.log li.evaded .body::before { content: '○ '; color: var(--ink-faint); }
+.log li.descend .body { color: var(--ink-soft); letter-spacing: 0.1em; }
+.log li.descend .body::before { content: '▽ '; }
+.log li.retreat .body, .log li.arrive .body, .log li.depart .body {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+/* ── ボタン・フォーム ───────────────────────── */
+button {
+  font-family: var(--serif);
+  color: var(--ink);
+  background: var(--parchment-deep);
+  border: 1px solid var(--rule);
+  padding: 0.42rem 0.9rem;
+  cursor: pointer;
+  letter-spacing: 0.12em;
+  font-size: 0.85rem;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+button:hover:not(:disabled) { background: var(--ink-soft); color: var(--parchment); border-color: var(--ink-soft); }
+button:disabled { opacity: 0.42; cursor: not-allowed; }
+button.primary { background: var(--vermilion); color: #fdf3e2; border-color: var(--vermilion); }
+button.primary:hover:not(:disabled) { background: #8d2d21; border-color: #8d2d21; }
+button.ghost { background: transparent; }
+button.tiny { padding: 0.15rem 0.5rem; font-size: 0.72rem; }
+
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.seg button { padding: 0.3rem 0; font-family: var(--mono); font-size: 0.78rem; }
+.seg button.on { background: var(--ink-soft); color: var(--parchment); border-color: var(--ink-soft); }
+
+.field { margin: 0.85rem 0; }
+.field > .lbl {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  letter-spacing: 0.12em;
+  margin-bottom: 0.35rem;
+}
+.field .hint { font-size: 0.7rem; color: var(--ink-faint); margin-top: 0.3rem; line-height: 1.5; }
+
+input[type='range'] { width: 100%; accent-color: var(--vermilion); }
+.check {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0.35rem 0;
+}
+.check input { margin-top: 0.25em; accent-color: var(--vermilion); }
+.check.greed { border: 1px solid var(--vermilion); padding: 0.5rem 0.6rem; background: rgba(163, 55, 42, 0.06); }
+
+/* ── 強化カード ─────────────────────────────── */
+.upgrade {
+  border: 1px solid var(--rule);
+  padding: 0.6rem 0.7rem;
+  margin-bottom: 0.6rem;
+  background: rgba(255, 252, 243, 0.4);
+}
+.upgrade header { display: flex; align-items: baseline; gap: 0.45rem; }
+.upgrade .name { letter-spacing: 0.14em; font-weight: 600; font-size: 0.92rem; }
+.upgrade .lv { font-family: var(--mono); font-size: 0.74rem; color: var(--ink-faint); margin-left: auto; }
+.upgrade .effect { font-size: 0.76rem; color: var(--ink-soft); margin: 0.3rem 0 0.5rem; line-height: 1.5; }
+.upgrade .buy { display: flex; align-items: center; gap: 0.5rem; }
+.upgrade .cost { font-family: var(--mono); font-size: 0.8rem; color: var(--vermilion); margin-left: auto; }
+
+/* ── タブ ───────────────────────────────────── */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--rule); margin-bottom: 0.9rem; }
+.tabs button {
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  padding: 0.4rem 0.9rem;
+  color: var(--ink-faint);
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+}
+.tabs button:hover { background: transparent; color: var(--ink); }
+.tabs button.on { color: var(--ink); border-bottom-color: var(--vermilion); }
+
+/* ── 遠征記(読み物としての体裁) ───────────── */
+.chronicle {
+  border-left: 2px solid var(--rule);
+  padding: 0 0 1.1rem 1.1rem;
+  position: relative;
+  margin-left: 0.4rem;
+}
+.chronicle::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 0.55rem;
+  width: 8px;
+  height: 8px;
+  background: var(--parchment);
+  border: 1px solid var(--ink-soft);
+  transform: rotate(45deg);
+}
+.chronicle.death::before { background: var(--vermilion); border-color: var(--vermilion); }
+.chronicle.fame::before { background: var(--gold); border-color: var(--gold); width: 10px; height: 10px; left: -6px; }
+.chronicle .head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.1em;
+}
+.chronicle .no { font-family: var(--mono); color: var(--ink-soft); font-size: 0.78rem; }
+.chronicle .text {
+  margin: 0.35rem 0 0.4rem;
+  font-size: 1rem;
+  line-height: 1.95;
+  text-align: justify;
+  letter-spacing: 0.02em;
+}
+.chronicle.fame .text { font-size: 1.06rem; }
+.chronicle .meta { font-size: 0.72rem; color: var(--ink-faint); font-family: var(--mono); }
+
+.tag {
+  display: inline-block;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-family: var(--sans);
+}
+.tag.death { border-color: var(--vermilion); color: var(--vermilion); }
+.tag.fame { border-color: var(--gold); color: var(--gold); background: rgba(138, 106, 44, 0.08); }
+
+.digest {
+  margin: 0 0 1.1rem 0.4rem;
+  padding: 0.5rem 1.1rem;
+  border-left: 2px dashed var(--rule);
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+}
+
+.fame-board {
+  border: 1px solid var(--gold);
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 1.3rem;
+  background: rgba(138, 106, 44, 0.05);
+}
+.fame-board .entry { font-size: 0.86rem; line-height: 1.8; padding: 0.3rem 0; border-bottom: 1px dotted var(--rule); }
+.fame-board .entry:last-child { border-bottom: none; }
+.fame-board .kind { font-size: 0.66rem; letter-spacing: 0.18em; color: var(--gold); display: block; }
+
+/* ── モーダル ───────────────────────────────── */
+.veil {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 24, 16, 0.7);
+  display: grid;
+  place-items: center;
+  z-index: 200;
+  padding: 1rem;
+}
+.card {
+  background: var(--parchment);
+  border: 1px solid var(--rule);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  padding: 1.6rem 1.8rem;
+  max-width: 460px;
+  width: 100%;
+}
+.card h2 {
+  margin: 0 0 0.9rem;
+  font-size: 1.05rem;
+  letter-spacing: 0.24em;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.5rem;
+}
+.card .actions { margin-top: 1.2rem; display: flex; justify-content: flex-end; gap: 0.6rem; }
+
+.empty {
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+  line-height: 1.9;
+  padding: 1.5rem 0;
+  text-align: center;
+}
