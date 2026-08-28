@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
+    "test:html": "node scripts/build-tests.mjs",
     "balance": "esbuild scripts/balance.ts --bundle --platform=node --format=esm --outfile=node_modules/.tmp/balance.mjs --log-level=warning && node node_modules/.tmp/balance.mjs"
   },
   "devDependencies": {

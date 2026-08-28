@@ -15,6 +15,7 @@ npm run build          # 型チェック + 本番ビルド (dist/)
 npm run build:single   # CSS/JS をインライン化した1ファイル (dist/standalone.html)
 npm run preview        # ビルド結果の確認
 npm test               # ロジックのテスト (vitest)
+npm run test:html      # 同じテストをブラウザで走らせる1ファイル (dist/tests.html)
 npm run balance        # バランス確認シミュレーション (下記)
 ```
 
@@ -53,6 +54,20 @@ MVPに含めないもの（分岐イベント、装備システム、複数ダ�
 - 序盤の1遠征は約2分、最深部まで潜る終盤の遠征は約4分（設計の「序盤2〜5分」）
 - 浅く安全に周回する方が有利な序盤 → 深く潜る方が有利な終盤、という勾配
 - 強欲設定は序盤では自殺行為（死亡率100%）、終盤で初めて最効率になる
+
+## テスト
+
+`npm test` で vitest。`npm run test:html` を使うと **同じテストコード** を
+ブラウザで実行する1ファイル `dist/tests.html` が出る（開くだけで走る）。
+テストファイルの `from 'vitest'` を esbuild の alias で
+`src/lib/__tests__/browser/harness.ts`(最小の vitest 互換シム)に差し替えているだけで、
+テスト側にブラウザ用の分岐は入れていない。
+
+harness が「何を渡しても成功」になっていると HTML のレポート全体が意味を失うので、
+harness 自身も `browser/harness.test.ts` で検証している
+（失敗が失敗として出るか、`.not` が反転するか、未対応のマッチャーが黙って通らないか）。
+新しいマッチャーを使うテストを書いたときは harness に足す。足し忘れた場合は
+`not a function` で落ちるので、黙って通ることはない。
 
 ## 設計上のポイント
 
@@ -93,7 +108,12 @@ src/
     content.ts           敵・お宝・罠の名前
     save.ts              localStorage セーブとマイグレーション
     rng.ts               決定論的乱数（mulberry32）
-scripts/balance.ts       バランス確認シミュレーション
+    __tests__/           vitest のテスト
+      browser/           ブラウザでテストを走らせる harness と runner
+scripts/
+  balance.ts             バランス確認シミュレーション
+  build-single.mjs       1ファイルのゲーム (dist/standalone.html)
+  build-tests.mjs        1ファイルのテストページ (dist/tests.html)
 ```
 
 UIは絵を使わず、数字・バー・テキスト・記号のみ。羊皮紙と活字の質感はCSSで作っている。

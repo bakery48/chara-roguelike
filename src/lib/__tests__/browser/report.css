@@ -1,0 +1,184 @@
+/* ゲーム本体と同じ「記録簿」の見た目を踏襲したテストレポート。 */
+:root {
+  --parchment: #efe3c8;
+  --parchment-deep: #e4d5b4;
+  --ink: #2f2519;
+  --ink-soft: #6b5a44;
+  --ink-faint: #9c8a70;
+  --rule: #c3ae86;
+  --vermilion: #a3372a;
+  --moss: #4c6b45;
+  --gold: #8a6a2c;
+  --serif: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', serif;
+  --mono: 'SFMono-Regular', 'Menlo', 'Consolas', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: #2a221a;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-feature-settings: 'palt' 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+.sheet {
+  max-width: 900px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 1.6rem 1.8rem 4rem;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 245, 0.5), rgba(255, 253, 245, 0) 200px),
+    var(--parchment);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.5);
+}
+
+header.top {
+  border-bottom: 3px double var(--rule);
+  padding-bottom: 0.8rem;
+  margin-bottom: 1.2rem;
+}
+header.top h1 {
+  margin: 0;
+  font-size: 1.3rem;
+  letter-spacing: 0.3em;
+  font-weight: 600;
+}
+header.top .sub {
+  font-size: 0.74rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.16em;
+  margin-top: 0.35rem;
+}
+
+/* ── 総括(詳細より先に読ませる) ───────────────── */
+.tally {
+  display: flex;
+  align-items: baseline;
+  gap: 1.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.7rem;
+}
+.tally .verdict {
+  font-size: 1.5rem;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+}
+.tally .verdict.pass { color: var(--moss); }
+.tally .verdict.fail { color: var(--vermilion); }
+.tally .verdict.running { color: var(--ink-soft); }
+.tally dl { display: flex; gap: 1.2rem; margin: 0; }
+.tally div { display: flex; align-items: baseline; gap: 0.35rem; }
+.tally dt { font-size: 0.72rem; color: var(--ink-soft); letter-spacing: 0.14em; }
+.tally dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+.tally dd.ok { color: var(--moss); }
+.tally dd.ng { color: var(--vermilion); }
+
+.progress {
+  height: 8px;
+  background: var(--parchment-deep);
+  border: 1px solid var(--rule);
+  overflow: hidden;
+  margin-bottom: 1.6rem;
+}
+.progress > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--moss);
+  transition: width 0.12s linear;
+}
+.progress.has-failure > i { background: var(--vermilion); }
+
+/* ── スイート ───────────────────────────────── */
+.suite { margin-bottom: 1.5rem; }
+.suite > h2 {
+  font-size: 0.8rem;
+  letter-spacing: 0.22em;
+  color: var(--ink-soft);
+  margin: 0 0 0.4rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+}
+.suite > h2 .count {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.case {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr auto;
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.34rem 0.2rem;
+  border-bottom: 1px dotted var(--rule);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.case .mark { font-family: var(--mono); font-weight: 600; }
+.case.pass .mark { color: var(--moss); }
+.case.fail .mark { color: var(--vermilion); }
+.case.fail .name { color: var(--vermilion); font-weight: 600; }
+.case .ms {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.case .reason {
+  grid-column: 2 / -1;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: var(--vermilion);
+  background: rgba(163, 55, 42, 0.07);
+  border-left: 2px solid var(--vermilion);
+  padding: 0.45rem 0.7rem;
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+footer.bottom {
+  margin-top: 2rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.74rem;
+  color: var(--ink-faint);
+  line-height: 1.8;
+}
+button {
+  font-family: var(--serif);
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+  background: var(--parchment-deep);
+  border: 1px solid var(--rule);
+  padding: 0.42rem 1.1rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+button:hover { background: var(--ink-soft); color: var(--parchment); }
+button:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .progress > i { transition: none; }
+}
