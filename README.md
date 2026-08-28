@@ -10,12 +10,17 @@
 
 ```bash
 npm install
-npm run dev       # 開発サーバー
-npm run build     # 型チェック + 本番ビルド (dist/)
-npm run preview   # ビルド結果の確認
-npm test          # ロジックのテスト (vitest)
-npm run balance   # バランス確認シミュレーション (下記)
+npm run dev            # 開発サーバー (http://localhost:5173)
+npm run build          # 型チェック + 本番ビルド (dist/)
+npm run build:single   # CSS/JS をインライン化した1ファイル (dist/standalone.html)
+npm run preview        # ビルド結果の確認
+npm test               # ロジックのテスト (vitest)
+npm run balance        # バランス確認シミュレーション (下記)
 ```
+
+バックエンドを持たない静的サイトで、`vite.config.ts` の `base` は `'./'` にしてある。
+`dist/` をそのまま itch.io に zip でアップロードしたり、任意のサブパスに置いて配信できる。
+`dist/standalone.html` は1ファイルで完結するので、ブラウザで直接開いても遊べる。
 
 ## MVPスコープの実装状況
 
