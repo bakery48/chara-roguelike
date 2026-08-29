@@ -7,7 +7,7 @@
 
 export const CONFIG = {
   /** セーブデータのスキーマバージョン。増やしたら save.ts にマイグレーションを足す。 */
-  saveVersion: 1,
+  saveVersion: 2,
 
   /** 時間まわり */
   time: {
@@ -48,7 +48,11 @@ export const CONFIG = {
 
   /** ヒーローの基礎能力 */
   hero: {
-    name: '名もなき遠征者',
+    /**
+     * 旧セーブ(v1)の移行先として残している既定名。
+     * 現在の遠征者の名前は GameState.heroName にあり、names.ts から引かれる。
+     */
+    legacyName: '名もなき遠征者',
     baseMaxHp: 70,
     baseAtk: 10,
     baseDef: 2,
@@ -162,6 +166,12 @@ export const CONFIG = {
       /** 遠征速度の上限倍率。 */
       maxSpeedMul: 2.5
     }
+  },
+
+  /** 冒険者の命名 */
+  naming: {
+    /** 名前を引いたときに二つ名が付く確率。 */
+    epithetChance: 0.35
   },
 
   /** 遠征記(記録庫) */

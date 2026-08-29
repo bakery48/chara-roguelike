@@ -6,7 +6,8 @@
  */
 import { CONFIG } from '../config'
 import type { GameState } from '../types'
-import { newSeed } from './rng'
+import { randomHeroName } from './names'
+import { Rng, newSeed } from './rng'
 
 export const STORAGE_KEY = 'chara-roguelike.save'
 
@@ -16,6 +17,10 @@ export function defaultState(): GameState {
     lastSaved: Date.now(),
     legacy: 0,
     upgrades: { forge: 0, tavern: 0, library: 0 },
+    // 空文字は「未登録」。初回起動時に命名画面を出すための印。
+    heroName: '',
+    heroGeneration: 1,
+    renameOnDeath: true,
     settings: {
       hpPct: CONFIG.retreat.defaultHpPct,
       targetFloor: CONFIG.retreat.defaultTargetFloor,
@@ -47,7 +52,25 @@ export function defaultState(): GameState {
  * 例) 2 を足すときは MIGRATIONS[1] = (s) => ({ ...s, newField: default })
  */
 type AnySave = Record<string, unknown>
-const MIGRATIONS: Record<number, (s: AnySave) => AnySave> = {}
+const MIGRATIONS: Record<number, (s: AnySave) => AnySave> = {
+  /**
+   * 1 → 2: 冒険者に名前を持たせた。
+   * v1 の遠征者は固定名だったので、既存のセーブはその名前を引き継ぐ
+   * (途中でいきなり別人になると、それまでの遠征記と噛み合わなくなるため)。
+   * 進行中の遠征にも同じ名前を入れておく。
+   */
+  1: (s) => {
+    const legacyName = CONFIG.hero.legacyName
+    const expedition = s.expedition as Record<string, unknown> | null
+    return {
+      ...s,
+      heroName: legacyName,
+      heroGeneration: 1,
+      renameOnDeath: true,
+      expedition: expedition ? { ...expedition, heroName: legacyName } : null
+    }
+  }
+}
 
 function migrate(raw: AnySave): AnySave {
   let version = typeof raw.version === 'number' ? raw.version : 0
@@ -79,6 +102,11 @@ function reconcile(data: AnySave): GameState {
     lastLog: Array.isArray(s.lastLog) ? s.lastLog : [],
     version: CONFIG.saveVersion
   }
+}
+
+/** 名前DBから1つ引く(命名画面の初期値・引き直し用)。 */
+export function suggestHeroName(): string {
+  return randomHeroName(new Rng(newSeed()))
 }
 
 export function loadState(): { state: GameState; loaded: boolean } {

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { CONFIG, UPGRADE_IDS, upgradeCost, type UpgradeId } from '../config'
   import { num } from '../lib/format'
+  import HeroNaming from './HeroNaming.svelte'
   import { canAfford } from '../lib/game'
   import { game } from '../lib/store.svelte'
 
@@ -26,6 +27,7 @@
   }
 
   const st = $derived(game.state.stats)
+  let renaming = $state(false)
 </script>
 
 <aside>
@@ -61,12 +63,28 @@
   {/each}
 
   <p class="section-title">ヒーロー</p>
-  <div class="stat-row"><span class="label">名前</span><span class="value">{CONFIG.hero.name}</span></div>
+  <div class="stat-row hero-name">
+    <span class="label">名前</span>
+    <span class="value">
+      {game.state.heroName}
+      {#if game.state.heroGeneration > 1}<em>第{game.state.heroGeneration}代</em>{/if}
+    </span>
+    <button class="tiny ghost" onclick={() => (renaming = true)}>改名</button>
+  </div>
   <div class="stat-row"><span class="label">最大HP</span><span class="value">{Math.round(game.hero.maxHp)}</span></div>
   <div class="stat-row"><span class="label">攻撃力</span><span class="value">{Math.round(game.hero.atk)}</span></div>
   <div class="stat-row"><span class="label">防御力</span><span class="value">{Math.round(game.hero.def)}</span></div>
   <div class="stat-row"><span class="label">遠征速度</span><span class="value">×{game.hero.speed.toFixed(2)}</span></div>
   <div class="stat-row"><span class="label">遺産獲得</span><span class="value">×{game.hero.legacyMul.toFixed(2)}</span></div>
+
+  <label class="check">
+    <input
+      type="checkbox"
+      checked={game.state.renameOnDeath}
+      onchange={(e) => game.setRenameOnDeath(e.currentTarget.checked)}
+    />
+    <span>死亡したら名簿から新しい冒険者を迎える</span>
+  </label>
 
   <p class="section-title">記録</p>
   <div class="stat-row"><span class="label">遠征回数</span><span class="value">{num(st.totalExpeditions)}</span></div>
@@ -84,3 +102,23 @@
     >
   </div>
 </aside>
+
+{#if renaming}
+  <HeroNaming mode="rename" onclose={() => (renaming = false)} />
+{/if}
+
+<style>
+  .stat-row.hero-name { gap: 0.5rem; }
+  .stat-row.hero-name .value {
+    margin-left: auto;
+    text-align: right;
+    font-family: var(--serif);
+    letter-spacing: 0.06em;
+  }
+  .stat-row.hero-name .value em {
+    font-style: normal;
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+    margin-left: 0.4rem;
+  }
+</style>

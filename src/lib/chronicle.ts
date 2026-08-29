@@ -112,7 +112,7 @@ export function extractFacts(
 
   return {
     index: exp.index,
-    hero: CONFIG.hero.name,
+    hero: exp.heroName,
     dungeon: CONFIG.dungeon.name,
     floor: exp.deepestFloor,
     outcome: settlement.outcome,

@@ -82,6 +82,7 @@ export function createExpedition(state: GameState): Expedition {
     timer: CONFIG.time.descendMs / stats.speed,
     elapsed: 0,
     deepestFloor: 0,
+    heroName: state.heroName,
     settings: { ...state.settings }
   }
 }
@@ -379,10 +380,10 @@ export function settleExpedition(exp: Expedition, upgrades: Record<UpgradeId, nu
 /** 出発ログを積む(遠征記の書き出しに使う)。 */
 export function logDeparture(exp: Expedition, settings: RetreatSettings): void {
   const line = settings.greedy
-    ? '撤退線を捨て、深部だけを見据えて出発した。'
+    ? '撤退線を捨て、深部だけを見据えて出発。'
     : settings.hpPct > 0
-      ? `HP${settings.hpPct}%・${settings.targetFloor}階を目安に出発した。`
-      : `${settings.targetFloor}階を目安に出発した。`
+      ? `HP${settings.hpPct}%・${settings.targetFloor}階を目安に出発。`
+      : `${settings.targetFloor}階を目安に出発。`
   exp.log.push({
     t: 0,
     floor: 0,
@@ -390,6 +391,6 @@ export function logDeparture(exp: Expedition, settings: RetreatSettings): void {
     outcome: 'depart',
     hp: Math.round(exp.hp),
     maxHp: Math.round(exp.maxHp),
-    text: `第${exp.index}次遠征 — ${line}`
+    text: `第${exp.index}次遠征 — ${exp.heroName}、${line}`
   })
 }

@@ -66,6 +66,8 @@ export interface Expedition {
   outcome?: 'return' | 'death'
   retreatReason?: RetreatReason
   killedBy?: string
+  /** この遠征に出た冒険者の名前(死んで代替わりしても記録は残る)。 */
+  heroName: string
   /** 出発時の設定のスナップショット(遠征記で参照する)。 */
   settings: RetreatSettings
 }
@@ -139,6 +141,12 @@ export interface GameState {
   lastSaved: number
   legacy: number
   upgrades: Record<UpgradeId, number>
+  /** 現在の冒険者の名前。空文字なら未登録(初回起動時の命名待ち)。 */
+  heroName: string
+  /** 何人目の冒険者か。死亡して代替わりするたびに増える。 */
+  heroGeneration: number
+  /** 死亡したときに新しい冒険者を迎えるか。 */
+  renameOnDeath: boolean
   settings: RetreatSettings
   expedition: Expedition | null
   /** 直近に完了した遠征のログ(待機中も画面に残すため)。 */

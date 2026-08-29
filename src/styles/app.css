@@ -112,6 +112,8 @@ body::before {
   font-weight: 600;
 }
 .section-title + .section-title { margin-top: 1.6rem; }
+/* チェックボックスの直後に見出しが来ると詰まるので、間を空ける。 */
+.check + .section-title { margin-top: 1.5rem; }
 h3.sub-title {
   font-size: 0.78rem;
   letter-spacing: 0.2em;

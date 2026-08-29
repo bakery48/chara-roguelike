@@ -14,7 +14,8 @@ import {
   normalizeUpgrades,
   stepGame
 } from './game'
-import { clearState, defaultState, loadState, saveState } from './save'
+import { clearState, defaultState, loadState, saveState, suggestHeroName } from './save'
+import { sanitizeHeroName } from './names'
 import type { GameState, OfflineReport, RetreatSettings } from '../types'
 
 function clone<T>(v: T): T {
@@ -109,8 +110,28 @@ class Game {
 
   /* ── プレイヤー操作 ───────────────────────────── */
 
+  /** 冒険者が未登録なら命名待ち。この間は遠征に出さない。 */
+  needsNaming = $derived(this.state.heroName.trim() === '')
+
   depart(): void {
+    if (this.needsNaming) return
     if (this.state.status === 'idle') beginExpedition(this.state)
+  }
+
+  /** 命名・改名。使えない入力なら名簿から引き直す。 */
+  setHeroName(name: string): void {
+    this.state.heroName = sanitizeHeroName(name) ?? suggestHeroName()
+    this.#flush()
+  }
+
+  /** 名簿から候補を1つ引く(画面には反映せず、候補を返すだけ)。 */
+  suggestName(): string {
+    return suggestHeroName()
+  }
+
+  setRenameOnDeath(v: boolean): void {
+    this.state.renameOnDeath = v
+    this.#flush()
   }
 
   buy(id: UpgradeId): void {

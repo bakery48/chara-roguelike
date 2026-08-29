@@ -24,7 +24,7 @@ describe('templates', () => {
 
 describe('composeChronicle', () => {
   it('スロットを埋め残さず、複数文の遠征記を作る', () => {
-    const state = defaultState()
+    const state = { ...defaultState(), heroName: 'テスト遠征者' }
     for (let seed = 0; seed < 100; seed++) {
       const exp = createExpedition(state)
       exp.seed = seed
@@ -39,7 +39,7 @@ describe('composeChronicle', () => {
   })
 
   it('同じ遠征からは同じ文章が出る(決定論)', () => {
-    const state = defaultState()
+    const state = { ...defaultState(), heroName: 'テスト遠征者' }
     const exp = createExpedition(state)
     exp.seed = 4242
     advanceExpedition(exp, 3600_000)
@@ -48,7 +48,7 @@ describe('composeChronicle', () => {
   })
 
   it('文面は状況によって揺れる', () => {
-    const state = defaultState()
+    const state = { ...defaultState(), heroName: 'テスト遠征者' }
     const texts = new Set<string>()
     for (let seed = 0; seed < 40; seed++) {
       const exp = createExpedition(state)
@@ -60,7 +60,7 @@ describe('composeChronicle', () => {
   })
 
   it('死亡した遠征には death タグが付く', () => {
-    const state = defaultState()
+    const state = { ...defaultState(), heroName: 'テスト遠征者' }
     let checked = 0
     for (let seed = 0; seed < 60 && checked < 3; seed++) {
       const exp = createExpedition(state)
@@ -77,7 +77,7 @@ describe('composeChronicle', () => {
 
 describe('buildTimeline', () => {
   it('平凡な遠征が続くとダイジェストにまとまる', () => {
-    const state = defaultState()
+    const state = { ...defaultState(), heroName: 'テスト遠征者' }
     beginExpedition(state)
     stepGame(state, 2 * 3600_000)
     const items = buildTimeline(state.chronicles)

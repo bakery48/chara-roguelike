@@ -12,6 +12,8 @@ import {
   logDeparture,
   settleExpedition
 } from './expedition'
+import { randomHeroName } from './names'
+import { Rng } from './rng'
 import type { GameState, OfflineReport } from '../types'
 
 /** 進行ループの安全上限(暴走防止)。 */
@@ -60,6 +62,13 @@ function finishExpedition(state: GameState, report?: OfflineReport): void {
     report.legacyGained += settlement.legacy
     report.deepest = Math.max(report.deepest, exp.deepestFloor)
     if (settlement.outcome === 'death') report.deaths++
+  }
+
+  // 代替わりは遠征記を作ったあとに行う。死んだ本人の名前で記録を残すため。
+  if (settlement.outcome === 'death' && state.renameOnDeath) {
+    // 乱数は遠征の seed から引く。オフライン進行でも同じ名前になる。
+    state.heroName = randomHeroName(new Rng(exp.seed))
+    state.heroGeneration++
   }
 
   if (state.settings.autoRepeat) {

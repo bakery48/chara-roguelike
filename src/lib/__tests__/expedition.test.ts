@@ -7,7 +7,7 @@ import { Rng } from '../rng'
 import type { GameState } from '../../types'
 
 function freshState(patch: Partial<GameState> = {}): GameState {
-  return { ...defaultState(), ...patch }
+  return { ...defaultState(), heroName: 'テスト遠征者', ...patch }
 }
 
 /** 遠征が終わるまで進める。 */

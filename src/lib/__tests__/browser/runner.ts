@@ -12,6 +12,7 @@ import { plannedCount, runAll, type TestResult } from './harness'
 import '../expedition.test'
 import '../chronicle.test'
 import '../save.test'
+import '../naming.test'
 import './harness.test'
 
 const root = document.getElementById('report')

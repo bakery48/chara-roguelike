@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from 'svelte'
   import BasePanel from './components/BasePanel.svelte'
   import ChroniclePanel from './components/ChroniclePanel.svelte'
+  import HeroNaming from './components/HeroNaming.svelte'
   import LogPanel from './components/LogPanel.svelte'
   import PlaytestPanel from './components/PlaytestPanel.svelte'
   import StatusPanel from './components/StatusPanel.svelte'
@@ -54,7 +55,10 @@
   {/if}
 </div>
 
-{#if report}
+<!-- 冒険者が未登録なら、まず名前を決めてもらう(留守中の報告より先) -->
+{#if game.needsNaming}
+  <HeroNaming mode="register" onclose={() => {}} />
+{:else if report}
   <div class="veil">
     <div class="card">
       <h2>留 守 中 の 記 録</h2>
