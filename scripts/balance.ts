@@ -12,6 +12,7 @@ import { CONFIG, UPGRADE_IDS, upgradeCost, type UpgradeId } from '../src/config'
 import { advanceExpedition, createExpedition, heroStats, settleExpedition } from '../src/lib/expedition'
 import { beginExpedition, buyUpgrade, stepGame } from '../src/lib/game'
 import { defaultState } from '../src/lib/save'
+import { EPITHETS, traitSummary } from '../src/lib/names'
 import type { GameState, RetreatSettings } from '../src/types'
 
 const HOUR = 3600_000
@@ -30,9 +31,10 @@ function rpad(s: string | number, n: number): string {
 function sampleRuns(
   settings: RetreatSettings,
   upgrades: Record<UpgradeId, number>,
-  n: number
+  n: number,
+  epithet = ''
 ) {
-  const state: GameState = { ...defaultState(), settings, upgrades }
+  const state: GameState = { ...defaultState(), settings, upgrades, heroEpithet: epithet, heroName: '検証' }
   let deaths = 0
   let floors = 0
   let legacy = 0
@@ -87,7 +89,52 @@ function retreatTable(upgrades: Record<UpgradeId, number>, label: string) {
   }
 }
 
-/* ── 2) 放置成長曲線 ──────────────────────────────── */
+/* ── 2) 二つ名(特性)別 ────────────────────────────── */
+
+function traitTable(
+  upgrades: Record<UpgradeId, number>,
+  label: string,
+  settings: RetreatSettings,
+  settingsLabel: string
+) {
+  const base = sampleRuns(settings, upgrades, 500)
+
+  console.log(`\n■ 二つ名別 (${label} / ${settingsLabel})`)
+  console.log(
+    pad('二つ名', 14) + rpad('死亡率', 8) + rpad('平均階', 8) + rpad('遺産/分', 9) +
+      rpad('基準比', 9) + '  効果'
+  )
+  console.log(
+    pad('(なし)', 14) + rpad(`${(base.deathRate * 100).toFixed(1)}%`, 8) +
+      rpad(base.avgFloor.toFixed(1), 8) + rpad(base.legacyPerMin.toFixed(1), 9) +
+      rpad('—', 9)
+  )
+
+  const rows = EPITHETS.map((e) => {
+    const r = sampleRuns(settings, upgrades, 500, e.id)
+    return { e, r, ratio: r.legacyPerMin / base.legacyPerMin }
+  }).sort((a, b) => b.ratio - a.ratio)
+
+  for (const { e, r, ratio } of rows) {
+    console.log(
+      pad(e.label, 14) +
+        rpad(`${(r.deathRate * 100).toFixed(1)}%`, 8) +
+        rpad(r.avgFloor.toFixed(1), 8) +
+        rpad(r.legacyPerMin.toFixed(1), 9) +
+        rpad(`${ratio >= 1 ? '+' : ''}${((ratio - 1) * 100).toFixed(0)}%`, 9) +
+        '  ' + traitSummary(e.id)
+    )
+  }
+
+  const ratios = rows.map((r) => r.ratio)
+  console.log(
+    `  最良 ${(Math.max(...ratios) * 100 - 100).toFixed(0)}% / ` +
+      `最悪 ${(Math.min(...ratios) * 100 - 100).toFixed(0)}% / ` +
+      `幅 ${((Math.max(...ratios) - Math.min(...ratios)) * 100).toFixed(0)}ポイント`
+  )
+}
+
+/* ── 3) 放置成長曲線 ──────────────────────────────── */
 
 /** 「一番安いものから買う」単純なAIで放置した場合の成長を追う。 */
 function progression(hours: number) {
@@ -138,7 +185,7 @@ function progression(hours: number) {
   for (const c of state.chronicles.slice(-6)) console.log(`   第${c.index}次 — ${c.text}`)
 }
 
-/* ── 3) コスト曲線 ───────────────────────────────── */
+/* ── 4) コスト曲線 ───────────────────────────────── */
 
 function costCurve() {
   console.log('\n■ 強化コスト曲線')
@@ -152,5 +199,9 @@ console.log(`ダンジョン: ${CONFIG.dungeon.name} / 最大${CONFIG.dungeon.ma
 retreatTable({ forge: 0, tavern: 0, library: 0 }, '無強化')
 retreatTable({ forge: 5, tavern: 5, library: 2 }, '中盤')
 retreatTable({ forge: 12, tavern: 12, library: 5 }, '終盤')
+const SAFE: RetreatSettings = { hpPct: 35, targetFloor: 5, greedy: false, autoRepeat: true }
+const RISKY: RetreatSettings = { hpPct: 15, targetFloor: 10, greedy: false, autoRepeat: true }
+traitTable({ forge: 0, tavern: 0, library: 0 }, '無強化', SAFE, '目標5F・HP35%(安全)')
+traitTable({ forge: 8, tavern: 8, library: 3 }, '中盤', RISKY, '目標10F・HP15%(冒険)')
 costCurve()
 progression(6)

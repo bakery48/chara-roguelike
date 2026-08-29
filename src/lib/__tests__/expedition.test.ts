@@ -7,7 +7,7 @@ import { Rng } from '../rng'
 import type { GameState } from '../../types'
 
 function freshState(patch: Partial<GameState> = {}): GameState {
-  return { ...defaultState(), heroName: 'テスト遠征者', ...patch }
+  return { ...defaultState(), heroName: 'テスト遠征者', heroEpithet: 'kamoku', ...patch }
 }
 
 /** 遠征が終わるまで進める。 */
@@ -120,7 +120,8 @@ describe('advanceExpedition', () => {
 
 describe('settleExpedition', () => {
   it('死亡時はゴールドの8割を失い、遺産は半分だけ入る', () => {
-    const state = freshState()
+    // 二つ名の修正を混ぜないよう、特性なしで検証する
+    const state = freshState({ heroEpithet: '' })
     const exp = createExpedition(state)
     exp.gold = 1000
     exp.depthLegacy = 100
@@ -134,7 +135,7 @@ describe('settleExpedition', () => {
   })
 
   it('帰還時は全額持ち帰る', () => {
-    const state = freshState()
+    const state = freshState({ heroEpithet: '' })
     const exp = createExpedition(state)
     exp.gold = 1000
     exp.depthLegacy = 100

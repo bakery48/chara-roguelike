@@ -4,12 +4,14 @@
  * 実時間の進行もオフライン進行も同じ `advanceExpedition` を通す。
  * 乱数は遠征ごとの seed から決定論的に引くので、同じ入力からは同じ結末になる。
  */
-import { CONFIG, floorGold, floorLegacy, type UpgradeId } from '../config'
+import { CONFIG, floorGold, floorLegacy, traitMods, type TraitId, type UpgradeId } from '../config'
 import { ENEMIES, TRAPS, TREASURES } from './content'
+import { displayName } from './names'
 import { Rng, newSeed } from './rng'
 import type {
   EventType,
   Expedition,
+  ExpeditionMods,
   GameState,
   LogEntry,
   RetreatSettings
@@ -25,17 +27,37 @@ export interface HeroStats {
   legacyMul: number
 }
 
-/** 恒久強化を反映したヒーローの能力値。 */
-export function heroStats(upgrades: Record<UpgradeId, number>): HeroStats {
+/** 恒久強化と二つ名を反映したヒーローの能力値。 */
+export function heroStats(
+  upgrades: Record<UpgradeId, number>,
+  epithet: TraitId = ''
+): HeroStats {
   const h = CONFIG.hero
   const u = CONFIG.upgrades
   const lib = upgrades.library
+  const t = traitMods(epithet)
   return {
-    maxHp: h.baseMaxHp + upgrades.tavern * u.tavern.hpPerLevel,
-    atk: h.baseAtk + upgrades.forge * u.forge.atkPerLevel,
-    def: h.baseDef,
-    speed: Math.min(u.library.maxSpeedMul, 1 + lib * u.library.speedPerLevel),
-    legacyMul: 1 + lib * u.library.legacyPerLevel
+    maxHp: Math.round((h.baseMaxHp + upgrades.tavern * u.tavern.hpPerLevel) * (t.maxHpMul ?? 1)),
+    atk: (h.baseAtk + upgrades.forge * u.forge.atkPerLevel) * (t.atkMul ?? 1),
+    def: h.baseDef + (t.defAdd ?? 0),
+    speed:
+      Math.min(u.library.maxSpeedMul, 1 + lib * u.library.speedPerLevel) * (t.speedMul ?? 1),
+    legacyMul: (1 + lib * u.library.legacyPerLevel) * (t.legacyMul ?? 1)
+  }
+}
+
+/** 二つ名を織り込んだ、遠征中の判定値を解決する。 */
+export function resolveMods(epithet: TraitId): ExpeditionMods {
+  const t = traitMods(epithet)
+  return {
+    goldMul: t.goldMul ?? 1,
+    legacyMul: t.legacyMul ?? 1,
+    critChance: Math.max(0, CONFIG.hero.critChance + (t.critChanceAdd ?? 0)),
+    trapEvade: Math.min(0.95, Math.max(0, CONFIG.trap.evadeChance + (t.trapEvadeAdd ?? 0))),
+    trapDamageMul: t.trapDamageMul ?? 1,
+    treasureChance: Math.min(1, CONFIG.rewards.treasureChance * (t.treasureChanceMul ?? 1)),
+    deathGoldLossRate: Math.min(1, CONFIG.death.goldLossRate * (t.deathGoldLossMul ?? 1)),
+    maxRounds: CONFIG.enemy.maxRounds + (t.maxRoundsAdd ?? 0)
   }
 }
 
@@ -61,7 +83,7 @@ function pickEnemy(rng: Rng, floor: number): string {
 
 /** 新しい遠征を作る。 */
 export function createExpedition(state: GameState): Expedition {
-  const stats = heroStats(state.upgrades)
+  const stats = heroStats(state.upgrades, state.heroEpithet)
   return {
     index: state.nextIndex,
     seed: newSeed(),
@@ -82,7 +104,9 @@ export function createExpedition(state: GameState): Expedition {
     timer: CONFIG.time.descendMs / stats.speed,
     elapsed: 0,
     deepestFloor: 0,
-    heroName: state.heroName,
+    heroName: displayName(state.heroEpithet, state.heroName),
+    epithet: state.heroEpithet,
+    mods: resolveMods(state.heroEpithet),
     settings: { ...state.settings }
   }
 }
@@ -144,14 +168,14 @@ function resolveBattle(exp: Expedition, rng: Rng): void {
   const eatk = c.enemy.atkBase * Math.pow(c.enemy.atkGrowth, f - 1)
   let taken = 0
 
-  for (let round = 0; round < c.enemy.maxRounds; round++) {
+  for (let round = 0; round < exp.mods.maxRounds; round++) {
     const v = c.hero.damageVariance
     let dmg = exp.atk * rng.range(1 - v, 1 + v)
-    if (rng.chance(c.hero.critChance)) dmg *= c.hero.critMultiplier
+    if (rng.chance(exp.mods.critChance)) dmg *= c.hero.critMultiplier
     ehp -= dmg
     if (ehp <= 0) {
       exp.kills++
-      const gold = Math.round(floorGold(f) * c.rewards.battleGoldMul)
+      const gold = Math.round(floorGold(f) * c.rewards.battleGoldMul * exp.mods.goldMul)
       exp.gold += gold
       log(exp, {
         floor: f,
@@ -210,11 +234,11 @@ function resolveBattle(exp: Expedition, rng: Rng): void {
 function resolveChest(exp: Expedition, rng: Rng): void {
   const c = CONFIG
   const f = exp.floor
-  let gold = Math.round(floorGold(f) * c.rewards.chestGoldMul)
+  let gold = Math.round(floorGold(f) * c.rewards.chestGoldMul * exp.mods.goldMul)
   let item: string | undefined
-  if (rng.chance(c.rewards.treasureChance)) {
+  if (rng.chance(exp.mods.treasureChance)) {
     item = rng.pick(TREASURES)
-    gold += Math.round(floorGold(f) * c.rewards.treasureGoldMul)
+    gold += Math.round(floorGold(f) * c.rewards.treasureGoldMul * exp.mods.goldMul)
     exp.treasures.push(item)
   }
   exp.gold += gold
@@ -232,7 +256,7 @@ function resolveTrap(exp: Expedition, rng: Rng): void {
   const c = CONFIG
   const f = exp.floor
   const name = rng.pick(TRAPS)
-  if (rng.chance(c.trap.evadeChance)) {
+  if (rng.chance(exp.mods.trapEvade)) {
     log(exp, {
       floor: f,
       type: 'trap',
@@ -244,7 +268,10 @@ function resolveTrap(exp: Expedition, rng: Rng): void {
   }
   const v = c.trap.variance
   const dmg =
-    c.trap.damageBase * Math.pow(c.trap.damageGrowth, f - 1) * rng.range(1 - v, 1 + v)
+    c.trap.damageBase *
+    Math.pow(c.trap.damageGrowth, f - 1) *
+    rng.range(1 - v, 1 + v) *
+    exp.mods.trapDamageMul
   exp.hp -= dmg
   log(exp, {
     floor: f,
@@ -355,11 +382,13 @@ export function settleExpedition(exp: Expedition, upgrades: Record<UpgradeId, nu
   const c = CONFIG
   const died = exp.outcome === 'death'
   const greedy = exp.settings.greedy
-  const stats = heroStats(upgrades)
+  // 遺産倍率は出発時の二つ名で決まるので、遠征側の値を使う。
+  const stats = heroStats(upgrades, exp.epithet)
 
   let gold = exp.gold
   if (greedy) gold = Math.round(gold * c.retreat.greedGoldMul)
-  const goldLost = died ? Math.round(gold * c.death.goldLossRate) : 0
+  // ロスト率は二つ名で変わる(「三度死んだ」など)。
+  const goldLost = died ? Math.round(gold * exp.mods.deathGoldLossRate) : 0
   gold -= goldLost
 
   let legacy = exp.depthLegacy

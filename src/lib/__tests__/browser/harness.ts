@@ -83,6 +83,7 @@ export interface Matchers {
   toBe(expected: unknown): void
   toEqual(expected: unknown): void
   toContain(expected: unknown): void
+  toContainEqual(expected: unknown): void
   toMatch(expected: RegExp | string): void
   toBeDefined(): void
   toBeGreaterThan(expected: number): void
@@ -117,6 +118,12 @@ function build(actual: unknown, negated: boolean): Matchers {
       } else {
         throw new Error(`toContain は文字列か配列にしか使えません: ${show(actual)}`)
       }
+    },
+    toContainEqual: (e) => {
+      if (!Array.isArray(actual)) {
+        throw new Error(`toContainEqual は配列にしか使えません: ${show(actual)}`)
+      }
+      check(actual.some((v) => deepEqual(v, e)), `to contain equal ${show(e)}`)
     },
     toMatch: (e) => {
       const re = typeof e === 'string' ? new RegExp(e) : e

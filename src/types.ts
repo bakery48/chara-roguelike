@@ -66,10 +66,30 @@ export interface Expedition {
   outcome?: 'return' | 'death'
   retreatReason?: RetreatReason
   killedBy?: string
-  /** この遠征に出た冒険者の名前(死んで代替わりしても記録は残る)。 */
+  /** この遠征に出た冒険者の表示名(二つ名込み)。代替わりしても記録は残る。 */
   heroName: string
+  /** この遠征に出た冒険者の二つ名ID。 */
+  epithet: string
+  /** 二つ名を反映した、この遠征中の判定値。 */
+  mods: ExpeditionMods
   /** 出発時の設定のスナップショット(遠征記で参照する)。 */
   settings: RetreatSettings
+}
+
+/**
+ * 二つ名を織り込んだあとの、遠征中に参照される確定値。
+ * 出発時に解決して遠征に焼き付けるので、途中で改名しても結果は変わらない。
+ */
+export interface ExpeditionMods {
+  goldMul: number
+  legacyMul: number
+  critChance: number
+  trapEvade: number
+  trapDamageMul: number
+  treasureChance: number
+  /** 死亡時にロストするゴールドの割合。 */
+  deathGoldLossRate: number
+  maxRounds: number
 }
 
 export interface RetreatSettings {
@@ -141,8 +161,10 @@ export interface GameState {
   lastSaved: number
   legacy: number
   upgrades: Record<UpgradeId, number>
-  /** 現在の冒険者の名前。空文字なら未登録(初回起動時の命名待ち)。 */
+  /** 現在の冒険者の名(二つ名を含まない)。空文字なら未登録(初回起動時の命名待ち)。 */
   heroName: string
+  /** 現在の冒険者の二つ名ID。抽選でのみ決まり、改名しても変わらない。 */
+  heroEpithet: string
   /** 何人目の冒険者か。死亡して代替わりするたびに増える。 */
   heroGeneration: number
   /** 死亡したときに新しい冒険者を迎えるか。 */

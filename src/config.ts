@@ -7,7 +7,7 @@
 
 export const CONFIG = {
   /** セーブデータのスキーマバージョン。増やしたら save.ts にマイグレーションを足す。 */
-  saveVersion: 2,
+  saveVersion: 3,
 
   /** 時間まわり */
   time: {
@@ -168,11 +168,43 @@ export const CONFIG = {
     }
   },
 
-  /** 冒険者の命名 */
-  naming: {
-    /** 名前を引いたときに二つ名が付く確率。 */
-    epithetChance: 0.35
-  },
+  /**
+   * 二つ名(＝冒険者の特性)の効果。
+   *
+   * 冒険者は「二つ名の抽選」と「名の抽選」で現れる。二つ名が能力を決め、
+   * 名は表示だけなので、プレイヤーが改名しても有利不利は生まれない。
+   *
+   * 省略した項目は等倍(1)/加算なし(0)。ラベルと説明文は names.ts 側にあり、
+   * 説明文はここの数値から自動生成されるので、文言と数値がずれることはない。
+   */
+  traits: {
+    hayaashi:    { speedMul: 1.15 },
+    ishiatama:   { trapDamageMul: 0.5, defAdd: 1 },
+    yome:        { treasureChanceMul: 2.0, goldMul: 1.1 },
+    chinoke:     { atkMul: 1.25, goldMul: 1.1, trapEvadeAdd: -0.15 },
+    oogurai:     { maxHpMul: 1.25, goldMul: 0.92 },
+    sandoshinda: { deathGoldLossMul: 0.4 },
+    tessa:       { defAdd: 3, maxHpMul: 1.05 },
+    nawanuke:    { trapEvadeAdd: 0.3 },
+    kazoejouzu:  { goldMul: 1.3 },
+    osozaki:     { speedMul: 0.85, legacyMul: 1.35 },
+    katame:      { critChanceAdd: 0.2, goldMul: 1.05, atkMul: 0.95 },
+    haikaburi:   { legacyMul: 1.2, maxHpMul: 0.9 },
+    shakkin:     { goldMul: 1.5, legacyMul: 0.9 },
+    kutsuoto:    { trapEvadeAdd: 0.15, treasureChanceMul: 1.5 },
+    usurai:      { atkMul: 1.4, goldMul: 1.15, maxHpMul: 0.7 },
+    ikigitanai:  { maxHpMul: 1.15, deathGoldLossMul: 0.7 },
+    engi:        { critChanceAdd: 0.08, treasureChanceMul: 1.6, goldMul: 1.05 },
+    juusan:      { legacyMul: 1.22, trapEvadeAdd: -0.1 },
+    amefurashi:  { goldMul: 1.3, trapDamageMul: 1.3 },
+    nemurizuki:  { maxHpMul: 1.3, speedMul: 0.95 },
+    doromamire:  { trapDamageMul: 0.55, goldMul: 0.97 },
+    nadate:      { atkMul: 1.15, goldMul: 1.2, legacyMul: 0.95 },
+    yakedo:      { defAdd: 2, trapDamageMul: 0.7 },
+    maigo:       { speedMul: 0.92, treasureChanceMul: 1.9 },
+    sabi:        { atkMul: 0.92, defAdd: 4 },
+    kamoku:      { maxHpMul: 1.05, defAdd: 2, legacyMul: 1.05 }
+  } as Record<string, TraitMods>,
 
   /** 遠征記(記録庫) */
   chronicle: {
@@ -188,6 +220,44 @@ export const CONFIG = {
 } as const
 
 export type Config = typeof CONFIG
+
+/**
+ * 二つ名が能力に与える修正。
+ * 掛け算のものは等倍が 1、足し算のものは 0 が無修正。
+ */
+export interface TraitMods {
+  /** 最大HP倍率。 */
+  maxHpMul?: number
+  /** 攻撃力倍率。 */
+  atkMul?: number
+  /** 防御力への加算。 */
+  defAdd?: number
+  /** 遠征速度倍率。 */
+  speedMul?: number
+  /** 獲得ゴールド倍率。 */
+  goldMul?: number
+  /** 遺産ポイント獲得倍率。 */
+  legacyMul?: number
+  /** 会心率への加算(0.15 = +15ポイント)。 */
+  critChanceAdd?: number
+  /** 罠回避率への加算。 */
+  trapEvadeAdd?: number
+  /** 罠ダメージ倍率。 */
+  trapDamageMul?: number
+  /** お宝出現率の倍率。 */
+  treasureChanceMul?: number
+  /** 死亡時にロストするゴールド割合への倍率。 */
+  deathGoldLossMul?: number
+  /** 1戦闘のラウンド上限への加算。 */
+  maxRoundsAdd?: number
+}
+
+export type TraitId = string
+
+/** 二つ名の効果。未定義の二つ名なら無修正を返す。 */
+export function traitMods(id: TraitId): TraitMods {
+  return CONFIG.traits[id] ?? {}
+}
 
 /** アップグレード ID の一覧(型安全なイテレーション用)。 */
 export const UPGRADE_IDS = ['forge', 'tavern', 'library'] as const

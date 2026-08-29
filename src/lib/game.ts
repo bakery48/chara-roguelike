@@ -12,7 +12,7 @@ import {
   logDeparture,
   settleExpedition
 } from './expedition'
-import { randomHeroName } from './names'
+import { drawHero } from './names'
 import { Rng } from './rng'
 import type { GameState, OfflineReport } from '../types'
 
@@ -66,8 +66,11 @@ function finishExpedition(state: GameState, report?: OfflineReport): void {
 
   // 代替わりは遠征記を作ったあとに行う。死んだ本人の名前で記録を残すため。
   if (settlement.outcome === 'death' && state.renameOnDeath) {
-    // 乱数は遠征の seed から引く。オフライン進行でも同じ名前になる。
-    state.heroName = randomHeroName(new Rng(exp.seed))
+    // 二つ名と名を別々に引く。乱数は遠征の seed から取るので、
+    // オフライン進行でも実時間進行でも同じ後任が現れる。
+    const next = drawHero(new Rng(exp.seed))
+    state.heroEpithet = next.epithet
+    state.heroName = next.given
     state.heroGeneration++
   }
 

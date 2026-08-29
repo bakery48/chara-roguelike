@@ -5,8 +5,9 @@
  * CONFIG.saveVersion を +1 し、MIGRATIONS に「n → n+1」の関数を足すこと。
  */
 import { CONFIG } from '../config'
+import { resolveMods } from './expedition'
 import type { GameState } from '../types'
-import { randomHeroName } from './names'
+import { drawHero, drawGivenName } from './names'
 import { Rng, newSeed } from './rng'
 
 export const STORAGE_KEY = 'chara-roguelike.save'
@@ -19,6 +20,7 @@ export function defaultState(): GameState {
     upgrades: { forge: 0, tavern: 0, library: 0 },
     // 空文字は「未登録」。初回起動時に命名画面を出すための印。
     heroName: '',
+    heroEpithet: '',
     heroGeneration: 1,
     renameOnDeath: true,
     settings: {
@@ -59,6 +61,23 @@ const MIGRATIONS: Record<number, (s: AnySave) => AnySave> = {
    * (途中でいきなり別人になると、それまでの遠征記と噛み合わなくなるため)。
    * 進行中の遠征にも同じ名前を入れておく。
    */
+  /**
+   * 2 → 3: 二つ名が特性になった。
+   * v2 の冒険者は二つ名を持たないので、ここで1つ引いて与える。
+   * 進行中の遠征にも同じ特性と、そこから解決した判定値を入れる。
+   */
+  2: (s) => {
+    const draw = drawHero(new Rng(newSeed()))
+    const expedition = s.expedition as Record<string, unknown> | null
+    return {
+      ...s,
+      heroEpithet: draw.epithet,
+      expedition: expedition
+        ? { ...expedition, epithet: draw.epithet, mods: resolveMods(draw.epithet) }
+        : null
+    }
+  },
+
   1: (s) => {
     const legacyName = CONFIG.hero.legacyName
     const expedition = s.expedition as Record<string, unknown> | null
@@ -104,9 +123,14 @@ function reconcile(data: AnySave): GameState {
   }
 }
 
-/** 名前DBから1つ引く(命名画面の初期値・引き直し用)。 */
-export function suggestHeroName(): string {
-  return randomHeroName(new Rng(newSeed()))
+/** 名だけを引き直す(命名画面の「名簿から引く」)。二つ名＝特性は変わらない。 */
+export function suggestGivenName(): string {
+  return drawGivenName(new Rng(newSeed()))
+}
+
+/** 冒険者を1人引く(初回登録・代替わり用)。 */
+export function drawNewHero(): { epithet: string; given: string } {
+  return drawHero(new Rng(newSeed()))
 }
 
 export function loadState(): { state: GameState; loaded: boolean } {

@@ -14,8 +14,8 @@ import {
   normalizeUpgrades,
   stepGame
 } from './game'
-import { clearState, defaultState, loadState, saveState, suggestHeroName } from './save'
-import { sanitizeHeroName } from './names'
+import { clearState, defaultState, drawNewHero, loadState, saveState, suggestGivenName } from './save'
+import { displayName, sanitizeHeroName } from './names'
 import type { GameState, OfflineReport, RetreatSettings } from '../types'
 
 function clone<T>(v: T): T {
@@ -34,7 +34,7 @@ class Game {
   #sinceSave = 0
 
   /** 恒久強化を反映した現在のヒーロー能力。 */
-  hero = $derived(heroStats(this.state.upgrades))
+  hero = $derived(heroStats(this.state.upgrades, this.state.heroEpithet))
 
   /** 記録庫の表示用(ダイジェスト化込み・新しい順)。 */
   timeline = $derived(buildTimeline(this.state.chronicles).slice().reverse())
@@ -54,6 +54,7 @@ class Game {
     } else {
       this.state = state
     }
+    this.#ensureHeroDrawn()
     this.#lastTick = Date.now()
     this.start()
   }
@@ -111,22 +112,37 @@ class Game {
   /* ── プレイヤー操作 ───────────────────────────── */
 
   /** 冒険者が未登録なら命名待ち。この間は遠征に出さない。 */
-  needsNaming = $derived(this.state.heroName.trim() === '')
+  needsNaming = $derived(this.state.heroName.trim() === '' || this.state.heroEpithet === '')
+
+  /** 二つ名込みの表示名。 */
+  heroDisplayName = $derived(displayName(this.state.heroEpithet, this.state.heroName))
 
   depart(): void {
     if (this.needsNaming) return
     if (this.state.status === 'idle') beginExpedition(this.state)
   }
 
-  /** 命名・改名。使えない入力なら名簿から引き直す。 */
+  /**
+   * 命名・改名。変えられるのは名だけで、二つ名(＝特性)は動かない。
+   * 使えない入力なら名簿から引き直す。
+   */
   setHeroName(name: string): void {
-    this.state.heroName = sanitizeHeroName(name) ?? suggestHeroName()
+    this.state.heroName = sanitizeHeroName(name) ?? suggestGivenName()
     this.#flush()
   }
 
-  /** 名簿から候補を1つ引く(画面には反映せず、候補を返すだけ)。 */
+  /** 名簿から名の候補を1つ引く(画面には反映せず、候補を返すだけ)。 */
   suggestName(): string {
-    return suggestHeroName()
+    return suggestGivenName()
+  }
+
+  /**
+   * まだ二つ名が決まっていなければ、門を叩いた冒険者を1人引く。
+   * 名は入れない(空のままだと needsNaming が立ち、登録画面が出る)。
+   */
+  #ensureHeroDrawn(): void {
+    if (this.state.heroEpithet !== '') return
+    this.state.heroEpithet = drawNewHero().epithet
   }
 
   setRenameOnDeath(v: boolean): void {
@@ -160,6 +176,7 @@ class Game {
   reset(): void {
     clearState()
     this.state = defaultState()
+    this.#ensureHeroDrawn()
     this.offlineReport = null
     this.#lastTick = Date.now()
   }

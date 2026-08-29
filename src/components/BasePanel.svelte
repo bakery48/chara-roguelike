@@ -2,6 +2,7 @@
   import { CONFIG, UPGRADE_IDS, upgradeCost, type UpgradeId } from '../config'
   import { num } from '../lib/format'
   import HeroNaming from './HeroNaming.svelte'
+  import { describeTrait, findEpithet } from '../lib/names'
   import { canAfford } from '../lib/game'
   import { game } from '../lib/store.svelte'
 
@@ -28,6 +29,8 @@
 
   const st = $derived(game.state.stats)
   let renaming = $state(false)
+  const epithet = $derived(findEpithet(game.state.heroEpithet))
+  const effects = $derived(describeTrait(game.state.heroEpithet))
 </script>
 
 <aside>
@@ -66,11 +69,24 @@
   <div class="stat-row hero-name">
     <span class="label">名前</span>
     <span class="value">
-      {game.state.heroName}
+      {game.heroDisplayName}
       {#if game.state.heroGeneration > 1}<em>第{game.state.heroGeneration}代</em>{/if}
     </span>
     <button class="tiny ghost" onclick={() => (renaming = true)}>改名</button>
   </div>
+
+  {#if epithet}
+    <div class="trait-row">
+      <span class="lore">{epithet.label}——{epithet.lore}</span>
+      <ul class="effects">
+        {#each effects as e (e.text)}
+          <li class:good={e.good} class:bad={!e.good}>{e.text}</li>
+        {:else}
+          <li>特筆すべき癖はない</li>
+        {/each}
+      </ul>
+    </div>
+  {/if}
   <div class="stat-row"><span class="label">最大HP</span><span class="value">{Math.round(game.hero.maxHp)}</span></div>
   <div class="stat-row"><span class="label">攻撃力</span><span class="value">{Math.round(game.hero.atk)}</span></div>
   <div class="stat-row"><span class="label">防御力</span><span class="value">{Math.round(game.hero.def)}</span></div>
@@ -109,6 +125,25 @@
 
 <style>
   .stat-row.hero-name { gap: 0.5rem; }
+  .trait-row { padding: 0.4rem 0 0.5rem; border-bottom: 1px dotted var(--rule); }
+  .trait-row .lore { font-size: 0.72rem; color: var(--ink-faint); line-height: 1.6; }
+  .trait-row .effects {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.35rem;
+    margin: 0.35rem 0 0;
+    padding: 0;
+  }
+  .trait-row .effects li {
+    font-size: 0.68rem;
+    font-family: var(--mono);
+    padding: 0.05rem 0.35rem;
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+  }
+  .trait-row .effects li.good { color: var(--moss); border-color: var(--moss); }
+  .trait-row .effects li.bad { color: var(--vermilion); border-color: var(--vermilion); }
   .stat-row.hero-name .value {
     margin-left: auto;
     text-align: right;

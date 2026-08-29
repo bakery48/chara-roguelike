@@ -27,6 +27,7 @@ describe('browser harness: expect', () => {
     expect(failureOf(() => browserExpect([1, 2]).toEqual([1, 2]))).toBe(null)
     expect(failureOf(() => browserExpect({ a: { b: 1 } }).toEqual({ a: { b: 1 } }))).toBe(null)
     expect(failureOf(() => browserExpect(['x']).toContain('x'))).toBe(null)
+    expect(failureOf(() => browserExpect([{ a: 1 }]).toContainEqual({ a: 1 }))).toBe(null)
     expect(failureOf(() => browserExpect('abc').toMatch(/b/))).toBe(null)
     expect(failureOf(() => browserExpect(3).toBeGreaterThan(2))).toBe(null)
     expect(failureOf(() => browserExpect(2).toBeLessThanOrEqual(2))).toBe(null)
@@ -46,6 +47,9 @@ describe('browser harness: expect', () => {
     )
     expect(failureOf(() => browserExpect(['a']).toContain('b'))).toBe(
       'expected ["a"] to contain "b"'
+    )
+    expect(failureOf(() => browserExpect([{ a: 1 }]).toContainEqual({ a: 2 }))).toBe(
+      'expected [{"a":1}] to contain equal {"a":2}'
     )
   })
 
